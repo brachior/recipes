@@ -1,3 +1,11 @@
+## JetBrains
+
+.idea/
+*/.idea/
+*/*.iml
+
+## NodeJS
+
 # Logs
 logs
 *.log

@@ -1,0 +1,27 @@
+{
+  "name": "recipes",
+  "version": "1.0.0",
+  "description": "Manage your recipes",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brachior/recipes.git"
+  },
+  "keywords": [
+    "recipes"
+  ],
+  "author": "brachior",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brachior/recipes/issues"
+  },
+  "homepage": "https://github.com/brachior/recipes#readme",
+  "devDependencies": {
+    "nodemon": "^1.18.3"
+  }
+}
