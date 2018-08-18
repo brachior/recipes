@@ -5,7 +5,8 @@ const Recipe = Database
     .create(
         'recipe',
         {
-            name: { type: Database.Types.String }
+            name: { type: Database.Types.String },
+            content: { type: Database.Types.String }
         },
         {
             timestamps: false,

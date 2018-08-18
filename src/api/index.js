@@ -1,6 +1,7 @@
 
 const AppRoot = require('app-root-path');
 const { Router } = require('express')
+const { handleServerErrors } = require('express-server-error')
 const ExpressEndPoints = require('express-list-endpoints')
 
 
@@ -8,6 +9,7 @@ const router = Router()
 const basename = '/api'
 
 
+router.use('/', handleServerErrors())
 router.use(basename + '/recipe', require('./recipe'))
 router.use(basename + '/recipes', require('./recipes'))
 
