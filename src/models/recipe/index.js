@@ -6,7 +6,7 @@ exports.get = {
         const recipe = await Model.findOne({name})
 
         if (recipe) {
-            return recipe.content
+            return recipe
         }
         throw 'not found'
     },

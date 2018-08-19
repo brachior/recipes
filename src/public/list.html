@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All recipes</title>
+</head>
+<body>
+    <h1>All recipes</h1>
+    <ul id="list"></ul>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script type="text/javascript">
+        (function () {
+            const list = document.getElementById('list')
+
+            axios
+                .get('http://localhost:8021/api/recipes')
+                .then(response => response.data)
+                .then(recipes => recipes.forEach(recipe => createElement(recipe.name)))
+                .catch(error => {
+                    console.error(error)
+                })
+
+            function createElement(name) {
+                const dom = document.createElement('li')
+                const links = {
+                    view: document.createElement('a'),
+                    edit: document.createElement('a')
+                }
+
+                links.view.href = 'http://localhost:8021/api/recipe/' + encodeURIComponent(name) + '/html'
+                links.view.target = '_blank'
+                links.edit.href = 'http://localhost:8021/api/recipe/' + encodeURIComponent(name) + '/html'
+                links.edit.target = '_blank'
+
+                links.view.appendChild(document.createTextNode(name))
+                links.edit.appendChild(document.createTextNode('edit'))
+                dom.appendChild(links.view)
+                dom.appendChild(document.createTextNode(' - '))
+                dom.appendChild(links.edit)
+                list.appendChild(dom)
+            }
+        })()
+    </script>
+</body>
+</html>

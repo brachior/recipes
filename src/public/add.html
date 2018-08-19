@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+<head>
+    <title>Add recipe</title>
+    <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.min.css">
+    <style>
+        .percent {
+            display: flex;
+        }
+
+        .percent > span {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+
+        .percent > div {
+            width: 300px;
+            height: 1.5em;
+            display: inline-flex;
+            align-items: center;
+            border: solid 1px gray;
+            border-radius: 5px;
+            background: #ffffff;
+        }
+
+        .container {
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body class="container">
+    <h1 id="recipe">New recipe</h1>
+
+    <form role="form" class="form" onsubmit="return false;">
+        <div class="form-group">
+            <label for="editor">Content</label>
+            <textarea id="editor"></textarea>
+        </div>
+        <button id="send" type="button" class="btn btn-primary">Send</button>
+
+        <div class="form-group">
+            <label for="file">Files to upload</label>
+            <input id="file" type="file" class="form-control" multiple="multiple"/>
+        </div>
+        <button id="upload" type="button" class="btn btn-primary">Upload</button>
+    </form>
+
+    <div id="output" class="container"></div>
+
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.min.js"></script>
+    <script>
+        (function () {
+            let recipe = ''
+            const sendFileBtn = document.getElementById('send')
+            const uploadFileBtn = document.getElementById('upload')
+            const output = document.getElementById('output')
+
+            const simplemde = new SimpleMDE({
+                element: document.getElementById('editor'),
+                indentWithTabs: false,
+                lineWrapping: false,
+                autofocus: true
+            })
+
+            const modal = new tingle.modal({
+                footer: true,
+                stickyFooter: false,
+                closeMethods: [],
+                closeLabel: "Close",
+                cssClass: ['modal']
+            })
+
+            modal.setContent(`
+                <h1>Create new recipe</h1>
+                <form role="form" class="form" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="modal-recipe">Recipe name</label>
+                        <input id="modal-recipe" type="text" class="form-control" />
+                    </div>
+                </form>
+            `)
+
+            modal.addFooterBtn('Create recipe', 'tingle-btn tingle-btn--primary', () => {
+                axios
+                    .put('http://localhost:8021/api/recipe/' + recipe)
+                    .then(() => {
+                        iziToast.success({ message: 'recipe created!' })
+                        document.getElementById('recipe').innerHTML = recipe
+                        simplemde.value('# ' + recipe + '\n')
+                        modal.close()
+                    })
+                    .catch(error => {
+                        console.error(error)
+                        iziToast.error({ message: 'recipe creation error!' })
+                    })
+            })
+
+            modal.open()
+
+            const modalBtn = document.querySelector('.modal > div > div:last-child > button')
+            modalBtn.setAttribute('disabled', 'disabled')
+
+            document.getElementById('modal-recipe').oninput = event => {
+                recipe = event.srcElement.value.trim()
+                if (recipe) {
+                    modalBtn.removeAttribute('disabled')
+                } else {
+                    modalBtn.setAttribute('disabled', 'disabled')
+                }
+            }
+
+            sendFileBtn.onclick = () => {
+                const data = {
+                    content: simplemde.value()
+                }
+
+                axios
+                    .post('http://localhost:8021/api/recipe/' + encodeURIComponent(recipe), data)
+                    .then(() => {
+                        iziToast.success({ message: 'content saved!' })
+                    })
+                    .catch(err => {
+                        console.error(err)
+                        iziToast.error({ message: 'content save error!' })
+                    })
+            }
+
+            uploadFileBtn.onclick = () => {
+                output.innerHTML = ''
+
+                const data = new FormData()
+                const files = document.getElementById('file').files
+
+                for (let i = 0; i < files.length; i++) {
+                    upload(files[i])
+                }
+
+                function upload(file) {
+                    const { bloc, dom } = createPercentDom(file.name)
+
+                    data.append('file', file)
+                    const config = {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        },
+                        onUploadProgress: progressEvent => {
+                            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+
+                            dom.style.background = percentCompleted === 100
+                                ? 'rgb(70, 212, 68)'
+                                : 'linear-gradient(0.25turn, rgb(70, 212, 68), #ffffff ' + percentCompleted + '%)'
+                        }
+                    }
+
+                    axios
+                        .post('http://localhost:8021/api/recipe/' + encodeURIComponent(recipe) + '/upload/' + encodeURIComponent(file.name), data, config)
+                        .then(() => {
+                            dom.style.background = 'rgb(70, 212, 68)'
+                            setTimeout(() => bloc.remove(), 2000)
+
+                            iziToast.success({ message: 'file \'' + file.name + '\' uploaded successfully!' })
+                        })
+                        .catch(err => {
+                            dom.style.background = 'none'
+                            dom.style.color = 'red'
+                            dom.style.width = 'auto'
+                            dom.style.border = 'none'
+                            dom.innerHTML = err.response.data.message
+
+                            iziToast.error({ message: 'file \'' + file.name + '\' upload error!' })
+                        })
+                }
+
+                function createPercentDom(filename) {
+                    const bloc = document.createElement('div')
+                    bloc.className = 'percent'
+
+                    const blocFile = document.createElement('span')
+                    blocFile.appendChild(document.createTextNode('uploading \'' + filename + '\' file:'))
+                    bloc.appendChild(blocFile)
+
+                    const dom = document.createElement('div')
+                    bloc.appendChild(dom)
+
+                    output.appendChild(bloc)
+
+                    return { bloc, dom }
+                }
+            }
+        })()
+    </script>
+</body>
+</html>
